@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Любимой</title>
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700&family=Pacifico&display=swap');
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        min-height: 100vh;
+        background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+        font-family: 'Comfortaa', sans-serif;
+        color: #fff;
+        overflow-x: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 1.4s ease;
+        position: relative;
+    }
+
+    .stage {
+        display: none;
+        text-align: center;
+        width: 100%;
+        max-width: 640px;
+        padding: 20px;
+    }
+
+    .stage.active {
+        display: block;
+        animation: fadeIn 0.9s ease;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: scale(0.94); }
+        to   { opacity: 1; transform: scale(1); }
+    }
+
+    h1 {
+        font-size: clamp(2.4rem, 7vw, 3.8rem);
+        margin: 0.6em 0.4em;
+        text-shadow: 0 4px 20px rgba(255,105,180,0.5);
+    }
+
+    .btn {
+        padding: clamp(14px, 5vw, 18px) clamp(28px, 8vw, 50px);
+        font-size: clamp(1.5rem, 5vw, 2.1rem);
+        border: none;
+        border-radius: 60px;
+        cursor: pointer;
+        margin: 1.2em 0.8em;
+        transition: all 0.25s ease;
+        font-weight: 700;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.22);
+        touch-action: manipulation;
+    }
+
+    #yes {
+        background: #ff4081;
+        color: white;
+    }
+
+    #yes:hover, #yes:active {
+        transform: scale(1.06);
+        background: #f50057;
+    }
+
+    #no {
+        background: #607d8b;
+        color: white;
+        position: absolute;
+        min-width: 110px;
+        transition: all 0.4s ease-out;
+    }
+
+    #question-wrapper {
+        position: relative;
+        min-height: 220px;
+        width: 100%;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    #love-container {
+        width: 100%;
+        padding: 0 10px;
+        transition: opacity 1.2s ease, transform 1.4s ease;
+    }
+
+    #love-container.hidden {
+        opacity: 0;
+        transform: translateY(60px);
+        pointer-events: none;
+    }
+
+    input[type="range"] {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 12px;
+        background: rgba(255,255,255,0.35);
+        border-radius: 20px;
+        outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: clamp(40px, 10vw, 54px);
+        height: clamp(40px, 10vw, 54px);
+        background: #ff4081;
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 0 25px #ff4081aa;
+        border: 6px solid white;
+    }
+
+    input[type="range"]::-moz-range-thumb {
+        width: clamp(40px, 10vw, 54px);
+        height: clamp(40px, 10vw, 54px);
+        background: #ff4081;
+        border-radius: 50%;
+        border: 6px solid white;
+        box-shadow: 0 0 25px #ff4081aa;
+    }
+
+    #percent {
+        font-size: clamp(4rem, 14vw, 7.5rem);
+        font-weight: 700;
+        margin: 0.4em 0 0.2em;
+        color: white;
+        text-shadow: 0 0 45px #ff4081;
+        min-height: 1.4em;
+        transition: transform 0.2s ease;
+    }
+
+    #percent.pulse { animation: pulse 0.7s ease; }
+
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50%      { transform: scale(1.07); }
+    }
+
+    .final {
+        font-size: clamp(1.6rem, 4.5vw, 2.5rem);
+        margin: 1.2em 0.8em;
+        line-height: 1.45;
+        min-height: 3em;
+    }
+
+    .love-message {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Pacifico', cursive;
+        font-size: clamp(2.6rem, 7vw, 4.4rem);
+        text-align: center;
+        opacity: 0;
+        transition: opacity 1.8s ease;
+        text-shadow: 0 6px 30px rgba(0,0,0,0.45);
+        pointer-events: none;
+        padding: 20px;
+        white-space: pre-wrap;
+    }
+
+    .love-message.visible {
+        opacity: 1;
+    }
+
+    .petal {
+        position: absolute;
+        pointer-events: none;
+        width: 14px;
+        height: 14px;
+        background: #ff79a9;
+        clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%);
+        opacity: 0.75;
+        animation: fall linear forwards;
+    }
+
+    .petal:nth-child(odd)  { background: #ffb6c1; }
+    .petal:nth-child(3n)   { background: #ff4081; }
+    .petal:nth-child(4n)   { background: #ff9aa2; }
+
+    @keyframes fall {
+        0%   { transform: translateY(-15vh) rotate(0deg); opacity: 0.85; }
+        100% { transform: translateY(115vh) rotate(1080deg); opacity: 0; }
+    }
+
+    @media (max-width: 480px) {
+        .btn { margin: 1em 0.5em; }
+        #no { min-width: 100px; padding: 12px 24px; }
+        h1 { margin: 0.5em 0.3em; }
+    }
+</style>
+</head>
+<body>
+
+<!-- 1. Конверт -->
+<div id="stage1" class="stage active">
+    <div style="cursor:pointer; padding: 40px 20px;" onclick="openEnvelope()">
+        <h1 style="font-size: clamp(4.5rem, 18vw, 6.5rem); margin:0;">💌</h1>
+        <p style="font-size: clamp(1.4rem, 5vw, 2.2rem); margin-top:1.5em;">
+            Тебе валентинка 🙃.
+            Нажми чтобы открыть)
+        </p>
+    </div>
+</div>
+
+<!-- 2. Вопрос -->
+<div id="stage2" class="stage">
+    <h1>Ты меня любишь?</h1>
+    <div id="question-wrapper">
+        <button id="yes" class="btn" onclick="chooseYes()">Кря)</button>
+        <button id="no" class="btn" onmouseover="evadeNo()" ontouchstart="evadeNo()">Нет</button>
+    </div>
+</div>
+
+<!-- 3. Шкала + ответ -->
+<div id="stage3" class="stage">
+    <div id="love-container">
+        <h1>Ой, очень-очень приятно) А на сколько сильно🙃?</h1>
+        <input type="range" id="love-meter" min="0" max="2000" value="100" step="1" oninput="updateLove(this.value)">
+        <div id="percent">100%</div>
+        <p class="final" id="reaction"></p>
+    </div>
+
+    <div class="love-message" id="finalMessage">Я тоже очень люблю тебя, зайка,
+        спасибо что ты есть ♡</div>
+</div>
+
+<script>
+let yesSize = 1.2;
+let noAttempts = 0;
+let reachedMax = false;
+
+function openEnvelope() {
+    document.getElementById('stage1').classList.remove('active');
+    setTimeout(() => document.getElementById('stage2').classList.add('active'), 700);
+}
+
+function evadeNo() {
+    const wrapper = document.getElementById('question-wrapper');
+    const noBtn = document.getElementById('no');
+
+    noAttempts++;
+
+    yesSize += 0.38;
+    document.getElementById('yes').style.transform = `scale(${yesSize})`;
+
+    // Ограничиваем перемещение внутри контейнера вопроса
+    const maxX = wrapper.clientWidth - noBtn.offsetWidth - 20;
+    const maxY = wrapper.clientHeight - noBtn.offsetHeight - 20;
+    const x = 10 + Math.random() * Math.max(0, maxX);
+    const y = 10 + Math.random() * Math.max(0, maxY);
+
+    noBtn.style.left = x + 'px';
+    noBtn.style.top  = y + 'px';
+
+    let noSize = Math.max(0.6, 1.3 - noAttempts * 0.11);
+    noBtn.style.transform = `scale(${noSize})`;
+    noBtn.style.fontSize  = (2.1 - noAttempts * 0.15) + 'rem';
+}
+
+function chooseYes() {
+    document.getElementById('stage2').classList.remove('active');
+    setTimeout(() => {
+        document.getElementById('stage3').classList.add('active');
+        updateLove(100);
+    }, 600);
+}
+
+function updateLove(val) {
+    const percent = parseInt(val);
+    const percentEl = document.getElementById('percent');
+    const reaction = document.getElementById('reaction');
+    const container = document.getElementById('love-container');
+
+    percentEl.textContent = percent + '%';
+    percentEl.classList.add('pulse');
+    setTimeout(() => percentEl.classList.remove('pulse'), 700);
+
+    if      (percent >= 1800) reaction.textContent = "Это уже бесконечность… я самый счастливый на свете";
+    else if (percent >= 1400) reaction.textContent = "Ты моё всё. Спасибо, что ты рядом";
+    else if (percent >= 1000) reaction.textContent = "Сердце бьётся так сильно… это всё из-за тебя";
+    else if (percent >=  700) reaction.textContent = "Так тепло на душе, когда ты рядом";
+    else if (percent >=  400) reaction.textContent = "Улыбаюсь, как дурак, просто потому что ты есть";
+    else if (percent >=  200) reaction.textContent = "Это уже очень много… и всё равно хочется больше";
+    else                      reaction.textContent = "Ты знаешь, как сделать мой день ярче? Просто будь собой";
+
+    if (percent >= 2000 && !reachedMax) {
+        reachedMax = true;
+        container.classList.add('hidden');
+        document.getElementById('finalMessage').classList.add('visible');
+        startPetalRain();
+
+        confetti({
+            particleCount: 160,
+            spread: 100,
+            startVelocity: 40,
+            ticks: 180,
+            origin: { y: 0.45 },
+            colors: ['#ff79a9', '#ffb6c1', '#ffffff', '#ffebee']
+        });
+    }
+
+    if (Math.random() < 0.35 + percent/6000) createHeartParticle();
+
+    if (percent > 800 && Math.random() < 0.4) {
+        confetti({
+            particleCount: 40 + Math.floor(percent/120),
+            spread: 70,
+            origin: { y: 0.75 },
+            colors: ['#ff4081', '#ff80ab', '#ffebee']
+        });
+    }
+}
+
+function createHeartParticle() {
+    const heart = document.createElement('div');
+    heart.textContent = ['♡','💗','💖','💕'][Math.floor(Math.random()*4)];
+    heart.style.position = 'absolute';
+    heart.style.pointerEvents = 'none';
+    heart.style.left = Math.random() * 100 + 'vw';
+    heart.style.top  = Math.random() * 70 + 10 + 'vh';
+    heart.style.fontSize = (1.2 + Math.random()*1.8) + 'rem';
+    heart.style.animation = 'floatHeart 4s linear forwards';
+    document.body.appendChild(heart);
+    setTimeout(() => heart.remove(), 5000);
+}
+
+function startPetalRain() {
+    const count = window.innerWidth < 600 ? 50 : 90;
+    for (let i = 0; i < count; i++) {
+        setTimeout(() => {
+            const petal = document.createElement('div');
+            petal.className = 'petal';
+            petal.style.left = Math.random() * 100 + 'vw';
+            petal.style.animationDuration = (7 + Math.random() * 10) + 's';
+            petal.style.animationDelay = Math.random() * 4 + 's';
+            document.body.appendChild(petal);
+            setTimeout(() => petal.remove(), 18000);
+        }, i * 100);
+    }
+}
+</script>
+
+</body>
+</html>
